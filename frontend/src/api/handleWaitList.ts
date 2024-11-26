@@ -3,26 +3,27 @@ interface WaitListData {
   name: string;
   position: string;
   industry: string;
-  leadsPerWeek: number;
-  companySize: string;
-  useCase: string;
+  leads_per_week: number;
+  company_size: string;
+  use_case: string;
 }
 
 export const handleWaitList = async (data: WaitListData): Promise<void> => {
   try {
-    // Log the collected data for now
-    console.log('Waitlist submission data:', {
-      email: data.email,
-      name: data.name,
-      position: data.position,
-      industry: data.industry,
-      leadsPerWeek: data.leadsPerWeek,
-      companySize: data.companySize,
-      useCase: data.useCase
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/waitlist/submit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
     });
 
-    // TODO: Implement actual API call logic here
-    
+    if (!response.ok) {
+      throw new Error('Failed to submit waitlist entry');
+    }
+
+    const result = await response.json();
+    console.log('Waitlist submission successful:', result);
   } catch (error) {
     console.error('Error submitting to waitlist:', error);
     throw error;

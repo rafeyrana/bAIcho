@@ -14,8 +14,8 @@ import {
   MessageSquare,
   ChevronDown
 } from 'lucide-react';
-import { handleWaitList } from '../api/handleWaitList';
 import ConfirmationModal from '../Components/ConfirmationModal';
+import { handleWaitList } from '../api/handleWaitList';
 
 const LandingPage = () => {
   const [email, setEmail] = useState('');
@@ -23,9 +23,9 @@ const LandingPage = () => {
   const [name, setName] = useState('');
   const [position, setPosition] = useState('');
   const [industry, setIndustry] = useState('');
-  const [leadsPerWeek, setLeadsPerWeek] = useState<number>(0);
-  const [companySize, setCompanySize] = useState('0-10');
-  const [useCase, setUseCase] = useState('');
+  const [leads_per_week, setleads_per_week] = useState<number>(0);
+  const [company_size, setcompany_size] = useState('0-10');
+  const [use_case, setuse_case] = useState('');
   const [currentMetric, setCurrentMetric] = useState(0);
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -88,7 +88,7 @@ const LandingPage = () => {
     ref.current.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     try {
@@ -97,9 +97,9 @@ const LandingPage = () => {
         name,
         position,
         industry,
-        leadsPerWeek,
-        companySize,
-        useCase
+        leads_per_week: leads_per_week, // Convert to string as per API requirements
+        company_size,
+        use_case
       });
       
       setIsSubmitted(true);
@@ -108,9 +108,9 @@ const LandingPage = () => {
       setName('');
       setPosition('');
       setIndustry('');
-      setLeadsPerWeek(0);
-      setCompanySize('0-10');
-      setUseCase('');
+      setleads_per_week(0);
+      setcompany_size('0-10');
+      setuse_case('');
     } catch (error) {
       console.error('Error submitting form:', error);
       // You might want to show an error message to the user here
@@ -375,8 +375,8 @@ const LandingPage = () => {
               <span className="text-xl text-gray-400">Leads per Week</span>
               <input
                 type="number"
-                value={leadsPerWeek}
-                onChange={(e) => setLeadsPerWeek(Number(e.target.value))}
+                value={leads_per_week}
+                onChange={(e) => setleads_per_week(Number(e.target.value))}
                 placeholder="Enter the number of leads you generate per week"
                 className="w-full px-8 py-4 rounded-full bg-black/40 border-2 border-purple-900/30 text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center"
               />
@@ -384,8 +384,8 @@ const LandingPage = () => {
             <label className="block mb-2">
               <span className="text-xl text-gray-400">Company Size</span>
               <select
-                value={companySize}
-                onChange={(e) => setCompanySize(e.target.value)}
+                value={company_size}
+                onChange={(e) => setcompany_size(e.target.value)}
                 className="w-full px-8 py-4 rounded-full bg-black/40 border-2 border-purple-900/30 text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center"
               >
                 <option value="0-10">0-10</option>
@@ -399,8 +399,8 @@ const LandingPage = () => {
             <label className="block mb-2">
               <span className="text-xl text-gray-400">Use Case</span>
               <textarea
-                value={useCase}
-                onChange={(e) => setUseCase(e.target.value)}
+                value={use_case}
+                onChange={(e) => setuse_case(e.target.value)}
                 placeholder="Enter a brief description of how you plan to use bAIcho"
                 className="w-full px-8 py-4 rounded-xl bg-black/40 border-2 border-purple-900/30 text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center"
               />
