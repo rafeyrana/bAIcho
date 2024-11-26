@@ -23,6 +23,7 @@ export default function Auth() {
           password: data.password,
         });
         if (error) throw error;
+        
         navigate('/home');
       } else {
         const { error } = await supabase.auth.signUp({

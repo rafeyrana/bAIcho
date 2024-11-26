@@ -14,6 +14,7 @@ import {
   MessageSquare,
   ChevronDown
 } from 'lucide-react';
+import { handleWaitList } from '../api/handleWaitList';
 import ConfirmationModal from '../Components/ConfirmationModal';
 
 const LandingPage = () => {
@@ -30,7 +31,6 @@ const LandingPage = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
-  const signupRef = useRef<HTMLDivElement>(null);
   const contactRef = useRef<HTMLDivElement>(null);
 
   const metrics = [
@@ -88,19 +88,33 @@ const LandingPage = () => {
     ref.current.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = {
-      name,
-      position,
-      industry,
-      leadsPerWeek,
-      companySize,
-      useCase,
-      email
-    };
-    console.log('Form submission data:', JSON.stringify(formData, null, 2));
-    setIsSubmitted(true);
+    
+    try {
+      await handleWaitList({
+        email,
+        name,
+        position,
+        industry,
+        leadsPerWeek,
+        companySize,
+        useCase
+      });
+      
+      setIsSubmitted(true);
+      // Reset form
+      setEmail('');
+      setName('');
+      setPosition('');
+      setIndustry('');
+      setLeadsPerWeek(0);
+      setCompanySize('0-10');
+      setUseCase('');
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      // You might want to show an error message to the user here
+    }
   };
 
   const navItems = [
