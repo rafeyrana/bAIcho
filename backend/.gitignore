@@ -8,7 +8,7 @@ yarn-error.log
 .env
 .env.local
 .env.*.local
-
+.gitignore
 # Build output
 dist/
 build/

@@ -27,6 +27,7 @@ const LandingPage = () => {
   const [company_size, setcompany_size] = useState('0-10');
   const [use_case, setuse_case] = useState('');
   const [currentMetric, setCurrentMetric] = useState(0);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const heroRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
@@ -88,8 +89,54 @@ const LandingPage = () => {
     ref.current.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Name validation
+    if (!name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+
+    // Position validation
+    if (!position.trim()) {
+      newErrors.position = 'Position is required';
+    }
+
+    // Industry validation
+    if (!industry.trim()) {
+      newErrors.industry = 'Industry is required';
+    }
+
+    // Leads per week validation
+    if (leads_per_week < 0) {
+      newErrors.leads_per_week = 'Must be a positive number';
+    }
+
+    // Use case validation
+    if (!use_case.trim()) {
+      newErrors.use_case = 'Use case is required';
+    } else if (use_case.trim().length < 10) {
+      newErrors.use_case = 'Please provide more details (at least 10 characters)';
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      newErrors.email = 'Email is required';
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
     
     try {
       await handleWaitList({
@@ -97,7 +144,7 @@ const LandingPage = () => {
         name,
         position,
         industry,
-        leads_per_week: leads_per_week, // Convert to string as per API requirements
+        leads_per_week,
         company_size,
         use_case
       });
@@ -111,9 +158,10 @@ const LandingPage = () => {
       setleads_per_week(0);
       setcompany_size('0-10');
       setuse_case('');
+      setErrors({});
     } catch (error) {
       console.error('Error submitting form:', error);
-      // You might want to show an error message to the user here
+      setErrors({ submit: 'Failed to submit form. Please try again.' });
     }
   };
 
@@ -341,6 +389,9 @@ const LandingPage = () => {
             Join our waitlist to be among the first to experience the future of AI-powered sales.
           </p>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {errors.submit && (
+              <div className="text-red-500 text-lg mb-4">{errors.submit}</div>
+            )}
             <label className="block mb-2">
               <span className="text-xl text-gray-400">Name</span>
               <input
@@ -348,8 +399,13 @@ const LandingPage = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your name"
-                className="w-full px-8 py-4 rounded-full bg-black/40 border-2 border-purple-900/30 text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center"
+                className={`w-full px-8 py-4 rounded-full bg-black/40 border-2 ${
+                  errors.name ? 'border-red-500' : 'border-purple-900/30'
+                } text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center`}
               />
+              {errors.name && (
+                <span className="text-red-500 text-sm mt-1">{errors.name}</span>
+              )}
             </label>
             <label className="block mb-2">
               <span className="text-xl text-gray-400">Position</span>
@@ -358,8 +414,13 @@ const LandingPage = () => {
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
                 placeholder="Enter your position"
-                className="w-full px-8 py-4 rounded-full bg-black/40 border-2 border-purple-900/30 text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center"
+                className={`w-full px-8 py-4 rounded-full bg-black/40 border-2 ${
+                  errors.position ? 'border-red-500' : 'border-purple-900/30'
+                } text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center`}
               />
+              {errors.position && (
+                <span className="text-red-500 text-sm mt-1">{errors.position}</span>
+              )}
             </label>
             <label className="block mb-2">
               <span className="text-xl text-gray-400">Industry</span>
@@ -368,8 +429,13 @@ const LandingPage = () => {
                 value={industry}
                 onChange={(e) => setIndustry(e.target.value)}
                 placeholder="Enter your industry"
-                className="w-full px-8 py-4 rounded-full bg-black/40 border-2 border-purple-900/30 text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center"
+                className={`w-full px-8 py-4 rounded-full bg-black/40 border-2 ${
+                  errors.industry ? 'border-red-500' : 'border-purple-900/30'
+                } text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center`}
               />
+              {errors.industry && (
+                <span className="text-red-500 text-sm mt-1">{errors.industry}</span>
+              )}
             </label>
             <label className="block mb-2">
               <span className="text-xl text-gray-400">Leads per Week</span>
@@ -378,8 +444,14 @@ const LandingPage = () => {
                 value={leads_per_week}
                 onChange={(e) => setleads_per_week(Number(e.target.value))}
                 placeholder="Enter the number of leads you generate per week"
-                className="w-full px-8 py-4 rounded-full bg-black/40 border-2 border-purple-900/30 text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center"
+                min="0"
+                className={`w-full px-8 py-4 rounded-full bg-black/40 border-2 ${
+                  errors.leads_per_week ? 'border-red-500' : 'border-purple-900/30'
+                } text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center`}
               />
+              {errors.leads_per_week && (
+                <span className="text-red-500 text-sm mt-1">{errors.leads_per_week}</span>
+              )}
             </label>
             <label className="block mb-2">
               <span className="text-xl text-gray-400">Company Size</span>
@@ -402,8 +474,13 @@ const LandingPage = () => {
                 value={use_case}
                 onChange={(e) => setuse_case(e.target.value)}
                 placeholder="Enter a brief description of how you plan to use bAIcho"
-                className="w-full px-8 py-4 rounded-xl bg-black/40 border-2 border-purple-900/30 text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center"
+                className={`w-full px-8 py-4 rounded-xl bg-black/40 border-2 ${
+                  errors.use_case ? 'border-red-500' : 'border-purple-900/30'
+                } text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center`}
               />
+              {errors.use_case && (
+                <span className="text-red-500 text-sm mt-1">{errors.use_case}</span>
+              )}
             </label>
             <label className="block mb-2">
               <span className="text-xl text-gray-400">Email</span>
@@ -412,8 +489,13 @@ const LandingPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className="w-full px-8 py-4 rounded-full bg-black/40 border-2 border-purple-900/30 text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center"
+                className={`w-full px-8 py-4 rounded-full bg-black/40 border-2 ${
+                  errors.email ? 'border-red-500' : 'border-purple-900/30'
+                } text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center`}
               />
+              {errors.email && (
+                <span className="text-red-500 text-sm mt-1">{errors.email}</span>
+              )}
             </label>
             <button
               type="submit"
