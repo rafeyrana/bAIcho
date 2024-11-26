@@ -2,9 +2,6 @@ interface WaitListData {
   email: string;
   name: string;
   position: string;
-  industry: string;
-  leads_per_week: number;
-  company_size: string;
   use_case: string;
 }
 

@@ -12,7 +12,11 @@ import {
   Database,
   Timer,
   MessageSquare,
-  ChevronDown
+  ChevronDown,
+  FileText,
+  ArrowRight,
+  Video,
+  MessageCircle
 } from 'lucide-react';
 import ConfirmationModal from '../Components/ConfirmationModal';
 import { handleWaitList } from '../api/handleWaitList';
@@ -22,11 +26,7 @@ const LandingPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [name, setName] = useState('');
   const [position, setPosition] = useState('');
-  const [industry, setIndustry] = useState('');
-  const [leads_per_week, setleads_per_week] = useState<number>(0);
-  const [company_size, setcompany_size] = useState('0-10');
   const [use_case, setuse_case] = useState('');
-  const [currentMetric, setCurrentMetric] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -35,38 +35,31 @@ const LandingPage = () => {
   const contactRef = useRef<HTMLDivElement>(null);
 
   const metrics = [
-    { value: '85%', label: 'Lead Conversion Increase' },
-    { value: '60%', label: 'Time Saved' },
-    { value: '3x', label: 'ROI Improvement' }
+    { value: '70%', label: 'Better Information Retention' },
+    { value: '3x', label: 'Faster Learning Speed' },
+    { value: '85%', label: 'Student Engagement Increase' }
   ];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentMetric((prev) => (prev + 1) % metrics.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
 
   const features = [
     {
-      icon: <Database className="w-6 h-6 text-purple-400" />,
-      title: 'Smart Lead Processing',
-      description: 'Upload your leads via Google Sheets and let our AI handle the rest'
+      icon: <FileText className="w-6 h-6 text-purple-400" />,
+      title: 'Easy Content Upload',
+      description: 'Upload any study material - PDFs, docs, or links, and let our AI do the magic'
     },
     {
-      icon: <Search className="w-6 h-6 text-purple-400" />,
-      title: 'Advanced Research',
-      description: 'Automatic lead validation and enrichment using multiple data sources'
+      icon: <Video className="w-6 h-6 text-purple-400" />,
+      title: 'TikTok-Style Learning',
+      description: 'Transform boring study material into engaging, short-form educational content'
     },
     {
-      icon: <BarChart className="w-6 h-6 text-purple-400" />,
-      title: 'Intelligent Scoring',
-      description: 'Prioritize leads based on likelihood to convert using our ML models'
+      icon: <MessageCircle className="w-6 h-6 text-purple-400" />,
+      title: 'Interactive Learning Bot',
+      description: 'Ask questions via voice or text to deepen your understanding'
     },
     {
-      icon: <Mail className="w-6 h-6 text-purple-400" />,
-      title: 'Automated Outreach',
-      description: 'Personalized email campaigns that feel human and get responses'
+      icon: <Users className="w-6 h-6 text-purple-400" />,
+      title: 'Gen Alpha Engagement',
+      description: 'Connect with students through their preferred entertainment medium'
     }
   ];
 
@@ -102,16 +95,6 @@ const LandingPage = () => {
       newErrors.position = 'Position is required';
     }
 
-    // Industry validation
-    if (!industry.trim()) {
-      newErrors.industry = 'Industry is required';
-    }
-
-    // Leads per week validation
-    if (leads_per_week < 0) {
-      newErrors.leads_per_week = 'Must be a positive number';
-    }
-
     // Use case validation
     if (!use_case.trim()) {
       newErrors.use_case = 'Use case is required';
@@ -143,9 +126,6 @@ const LandingPage = () => {
         email,
         name,
         position,
-        industry,
-        leads_per_week,
-        company_size,
         use_case
       });
       
@@ -154,9 +134,6 @@ const LandingPage = () => {
       setEmail('');
       setName('');
       setPosition('');
-      setIndustry('');
-      setleads_per_week(0);
-      setcompany_size('0-10');
       setuse_case('');
       setErrors({});
     } catch (error) {
@@ -186,7 +163,7 @@ const LandingPage = () => {
               >
                 <Bot className="w-12 h-12 text-purple-400" />
                 <span className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-                  bAIcho
+                  BRAINTOK
                 </span>
               </motion.div>
               <div className="hidden md:flex items-center space-x-12">
@@ -219,9 +196,7 @@ const LandingPage = () => {
               transition={{ delay: 0.2 }}
               className="text-6xl md:text-7xl lg:text-8xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent"
             >
-              Transform Your Sales Team
-              <br />
-              with AI-Powered Automation
+              Education Meets<br />Gen Alpha's Language
             </motion.h1>
             <motion.p
               initial={{ y: 20, opacity: 0 }}
@@ -229,8 +204,8 @@ const LandingPage = () => {
               transition={{ delay: 0.4 }}
               className="text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed"
             >
-              Upload your leads, connect your tools, and watch as our AI handles everything
-              from research to personalized outreach.
+              Transform boring study materials into addictive TikTok-style learning content. 
+              Connect with students where they are - on their phones, speaking their language.
             </motion.p>
             <motion.div
               initial={{ y: 20, opacity: 0 }}
@@ -253,17 +228,17 @@ const LandingPage = () => {
               className="mt-16"
             >
               <motion.div
-                key={currentMetric}
+                key={metrics[0].value}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 className="text-center"
               >
                 <div className="text-5xl font-bold text-purple-400 mb-3">
-                  {metrics[currentMetric].value}
+                  {metrics[0].value}
                 </div>
                 <div className="text-xl text-gray-400">
-                  {metrics[currentMetric].label}
+                  {metrics[0].label}
                 </div>
               </motion.div>
             </motion.div>
@@ -285,20 +260,20 @@ const LandingPage = () => {
         <section ref={aboutRef} className="min-h-screen py-32 px-8 flex items-center">
         <div className="container mx-auto">
           <h2 className="text-6xl md:text-7xl font-bold mb-24 text-center bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            About bAIcho
+            About BRAINTOK
           </h2>
           <div className="grid md:grid-cols-2 gap-16 items-center max-w-7xl mx-auto">
             <div>
               <p className="text-2xl text-gray-400 mb-12 leading-relaxed">
-                We're revolutionizing how sales teams operate by leveraging the power
+                We're revolutionizing how students learn by leveraging the power
                 of artificial intelligence. Our platform combines advanced machine
-                learning with years of sales expertise to create a tool that doesn't
-                just automate - it enhances your entire sales process.
+                learning with years of educational expertise to create a tool that doesn't
+                just automate - it enhances your entire learning process.
               </p>
               <div className="space-y-8">
                 {[
-                  { icon: <Users className="w-8 h-8" />, text: 'Built by sales professionals for sales professionals' },
-                  { icon: <Timer className="w-8 h-8" />, text: 'Save 40+ hours per week per sales rep' },
+                  { icon: <Users className="w-8 h-8" />, text: 'Built by educators for educators' },
+                  { icon: <Timer className="w-8 h-8" />, text: 'Save 40+ hours per week per educator' },
                   { icon: <MessageSquare className="w-8 h-8" />, text: 'AI-powered personalization at scale' }
                 ].map((item, index) => (
                   <motion.div
@@ -322,13 +297,13 @@ const LandingPage = () => {
               className="bg-purple-900/20 p-12 rounded-xl border-2 border-purple-900/30 hover:border-purple-500/30 transition-all duration-300"
             >
               <h3 className="text-4xl font-semibold mb-10 text-purple-300">
-                Why Choose bAIcho?
+                Why Choose BRAINTOK?
               </h3>
               <ul className="space-y-6">
                 {[
-                  'End-to-end sales automation',
-                  'Advanced lead scoring and prioritization',
-                  'Personalized email campaigns at scale',
+                  'End-to-end learning automation',
+                  'Advanced content creation and curation',
+                  'Personalized learning experiences at scale',
                   'Real-time tracking and analytics',
                   'Seamless integration with your existing tools'
                 ].map((item, index) => (
@@ -349,8 +324,6 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
-
-
 
       {/* Features Grid */}
       <section ref={featuresRef} className="min-h-screen py-32 bg-gray-900/50 flex items-center">
@@ -379,6 +352,86 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Flow Diagram Section */}
+      <section className="min-h-screen py-32 bg-black/40 flex items-center">
+        <div className="container mx-auto px-8">
+          <h2 className="text-6xl md:text-7xl font-bold mb-24 text-center bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+            How It Works
+          </h2>
+          
+          <div className="flex flex-col md:flex-row items-center justify-center space-y-12 md:space-y-0 md:space-x-8">
+            {/* Study Material */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col items-center p-8 rounded-xl bg-black/40 border-2 border-purple-900/30"
+            >
+              <FileText className="w-16 h-16 text-purple-400 mb-4" />
+              <h3 className="text-2xl font-semibold text-purple-300 text-center">Study Material</h3>
+              <p className="text-gray-400 text-center mt-2">PDFs, Docs, Links</p>
+            </motion.div>
+
+            {/* Arrow */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="hidden md:block"
+            >
+              <ArrowRight className="w-12 h-12 text-purple-400" />
+            </motion.div>
+
+            {/* BRAINTOK */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col items-center p-8 rounded-xl bg-black/40 border-2 border-purple-900/30"
+            >
+              <Bot className="w-16 h-16 text-purple-400 mb-4" />
+              <h3 className="text-2xl font-semibold text-purple-300 text-center">BRAINTOK</h3>
+              <p className="text-gray-400 text-center mt-2">AI Processing</p>
+            </motion.div>
+
+            {/* Arrow */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="hidden md:block"
+            >
+              <ArrowRight className="w-12 h-12 text-purple-400" />
+            </motion.div>
+
+            {/* TikTok Style Content */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col items-center p-8 rounded-xl bg-black/40 border-2 border-purple-900/30"
+            >
+              <Video className="w-16 h-16 text-purple-400 mb-4" />
+              <h3 className="text-2xl font-semibold text-purple-300 text-center">Educational Content</h3>
+              <p className="text-gray-400 text-center mt-2">TikTok-Style Videos</p>
+            </motion.div>
+          </div>
+
+          <div className="mt-24 text-center">
+            <p className="text-2xl text-gray-400 mb-8">
+              Gone are the days of reading long PDF documents. 
+              Connect with students at their entertainment level.
+            </p>
+            <button
+              onClick={() => scrollTo(contactRef as React.MutableRefObject<HTMLDivElement>)}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-12 py-4 rounded-full text-xl font-semibold transition-all duration-300 hover:transform hover:scale-105"
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Sign Up Section */}
       <section ref={contactRef} className="min-h-screen py-32 px-8 flex items-center">
         <div className="container mx-auto max-w-3xl text-center">
@@ -386,7 +439,7 @@ const LandingPage = () => {
             Get Early Access
           </h2>
           <p className="text-2xl text-gray-400 mb-12 leading-relaxed">
-            Join our waitlist to be among the first to experience the future of AI-powered sales.
+            Join our waitlist to be among the first to experience the future of AI-powered learning.
           </p>
           <form onSubmit={handleSubmit} className="space-y-6">
             {errors.submit && (
@@ -423,66 +476,6 @@ const LandingPage = () => {
               )}
             </label>
             <label className="block mb-2">
-              <span className="text-xl text-gray-400">Industry</span>
-              <input
-                type="text"
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                placeholder="Enter your industry"
-                className={`w-full px-8 py-4 rounded-full bg-black/40 border-2 ${
-                  errors.industry ? 'border-red-500' : 'border-purple-900/30'
-                } text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center`}
-              />
-              {errors.industry && (
-                <span className="text-red-500 text-sm mt-1">{errors.industry}</span>
-              )}
-            </label>
-            <label className="block mb-2">
-              <span className="text-xl text-gray-400">Leads per Week</span>
-              <input
-                type="number"
-                value={leads_per_week}
-                onChange={(e) => setleads_per_week(Number(e.target.value))}
-                placeholder="Enter the number of leads you generate per week"
-                min="0"
-                className={`w-full px-8 py-4 rounded-full bg-black/40 border-2 ${
-                  errors.leads_per_week ? 'border-red-500' : 'border-purple-900/30'
-                } text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center`}
-              />
-              {errors.leads_per_week && (
-                <span className="text-red-500 text-sm mt-1">{errors.leads_per_week}</span>
-              )}
-            </label>
-            <label className="block mb-2">
-              <span className="text-xl text-gray-400">Company Size</span>
-              <select
-                value={company_size}
-                onChange={(e) => setcompany_size(e.target.value)}
-                className="w-full px-8 py-4 rounded-full bg-black/40 border-2 border-purple-900/30 text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center"
-              >
-                <option value="0-10">0-10</option>
-                <option value="11-50">11-50</option>
-                <option value="51-100">51-100</option>
-                <option value="101-500">101-500</option>
-                <option value="501-1000">501-1000</option>
-                <option value="1001+">1001+</option>
-              </select>
-            </label>
-            <label className="block mb-2">
-              <span className="text-xl text-gray-400">Use Case</span>
-              <textarea
-                value={use_case}
-                onChange={(e) => setuse_case(e.target.value)}
-                placeholder="Enter a brief description of how you plan to use bAIcho"
-                className={`w-full px-8 py-4 rounded-xl bg-black/40 border-2 ${
-                  errors.use_case ? 'border-red-500' : 'border-purple-900/30'
-                } text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center`}
-              />
-              {errors.use_case && (
-                <span className="text-red-500 text-sm mt-1">{errors.use_case}</span>
-              )}
-            </label>
-            <label className="block mb-2">
               <span className="text-xl text-gray-400">Email</span>
               <input
                 type="email"
@@ -497,11 +490,25 @@ const LandingPage = () => {
                 <span className="text-red-500 text-sm mt-1">{errors.email}</span>
               )}
             </label>
+            <label className="block mb-2">
+              <span className="text-xl text-gray-400">Use Case</span>
+              <textarea
+                value={use_case}
+                onChange={(e) => setuse_case(e.target.value)}
+                placeholder="Enter a brief description of how you plan to use BRAINTOK"
+                className={`w-full px-8 py-4 rounded-2xl bg-black/40 border-2 ${
+                  errors.use_case ? 'border-red-500' : 'border-purple-900/30'
+                } text-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-center min-h-[120px]`}
+              />
+              {errors.use_case && (
+                <span className="text-red-500 text-sm mt-1">{errors.use_case}</span>
+              )}
+            </label>
             <button
               type="submit"
               className="w-full bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-full text-xl font-semibold transition-all duration-300 hover:transform hover:scale-105"
             >
-              {isSubmitted ? 'Thank you!' : 'Join Waitlist'}
+              Join Waitlist
             </button>
           </form>
         </div>

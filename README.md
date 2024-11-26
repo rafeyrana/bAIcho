@@ -1,2 +1,2 @@
-# bAIcho
-## AI Sales Lead Generation / Conversion for B2B Companies
+# BRAINTOK
+## Tiktok Brainrot but this time you actually learn something
