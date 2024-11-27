@@ -2,6 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, X, AlertCircle, CheckCircle, Upload } from 'lucide-react';
+import { uploadDocuments, UploadError, UploadProgress } from '../../api/uploadService';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface FileWithPreview extends File {
   preview?: string;
@@ -12,11 +14,25 @@ interface FileWithPreview extends File {
 
 const UploadDoc: React.FC = () => {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (files.length + acceptedFiles.length > 5) {
-      setUploadError('Maximum 5 files allowed');
+  const updateFileProgress = useCallback((fileName: string, progress: number) => {
+    setFiles(prev => prev.map(file => 
+      file.name === fileName ? { ...file, uploadProgress: progress } : file
+    ));
+  }, []);
+
+  const handleUploadProgress = useCallback((progress: UploadProgress) => {
+    Object.entries(progress).forEach(([fileName, value]) => {
+      updateFileProgress(fileName, value);
+    });
+  }, [updateFileProgress]);
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (!user?.email) {
+      setUploadError('Please login to upload documents');
       return;
     }
 
@@ -29,7 +45,45 @@ const UploadDoc: React.FC = () => {
 
     setFiles(prev => [...prev, ...newFiles]);
     setUploadError(null);
-  }, [files]);
+
+    try {
+      setIsUploading(true);
+      await uploadDocuments(acceptedFiles, user.email, handleUploadProgress);
+      
+      // Mark files as completed
+      setFiles(prev => prev.map(file => ({
+        ...file,
+        uploadProgress: 100
+      })));
+    } catch (error) {
+      if (error instanceof UploadError) {
+        setUploadError(error.message);
+        
+        // Mark affected file as failed if specified
+        if (error.fileName) {
+          setFiles(prev => prev.map(file => 
+            file.name === error.fileName 
+              ? { ...file, error: error.message, uploadProgress: 0 } 
+              : file
+          ));
+        }
+      } else {
+        setUploadError('An unexpected error occurred during upload');
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  }, [user?.email, handleUploadProgress]);
+
+  const removeFile = useCallback((fileId: string) => {
+    setFiles(prev => {
+      const updatedFiles = prev.filter(file => file.id !== fileId);
+      if (updatedFiles.length === 0) {
+        setUploadError(null);
+      }
+      return updatedFiles;
+    });
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -38,47 +92,9 @@ const UploadDoc: React.FC = () => {
       'application/msword': ['.doc'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
     },
-    maxFiles: 5
+    maxFiles: 2,
+    disabled: isUploading
   });
-
-  const removeFile = (id: string) => {
-    setFiles(prev => {
-      const updatedFiles = prev.filter(file => file.id !== id);
-      if (updatedFiles.length === 0) {
-        setUploadError(null);
-      }
-      return updatedFiles;
-    });
-  };
-
-  const simulateUpload = (id: string) => {
-    setFiles(prev => prev.map(file => {
-      if (file.id === id) {
-        return { ...file, uploadProgress: 0, error: undefined };
-      }
-      return file;
-    }));
-
-    const interval = setInterval(() => {
-      setFiles(prev => {
-        const updatedFiles = prev.map(file => {
-          if (file.id === id) {
-            const progress = (file.uploadProgress || 0) + 10;
-            if (progress >= 100) {
-              clearInterval(interval);
-            }
-            return { ...file, uploadProgress: progress };
-          }
-          return file;
-        });
-        return updatedFiles;
-      });
-    }, 500);
-  };
-
-  const retryUpload = (id: string) => {
-    simulateUpload(id);
-  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
@@ -98,7 +114,7 @@ const UploadDoc: React.FC = () => {
       <motion.div
         className={`w-full max-w-2xl p-8 rounded-xl border-2 border-dashed transition-colors duration-300 ${
           isDragActive ? 'border-purple-400 bg-purple-900/20' : 'border-purple-900/30 bg-black/40'
-        }`}
+        } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
         onClick={getRootProps().onClick}
         onKeyDown={getRootProps().onKeyDown}
         onFocus={getRootProps().onFocus}
@@ -107,8 +123,8 @@ const UploadDoc: React.FC = () => {
         onDragLeave={getRootProps().onDragLeave}
         onDragOver={getRootProps().onDragOver}
         onDrop={getRootProps().onDrop}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: isUploading ? 1 : 1.02 }}
+        whileTap={{ scale: isUploading ? 1 : 0.98 }}
       >
         <input {...getInputProps()} />
         <div className="text-center">
@@ -119,90 +135,70 @@ const UploadDoc: React.FC = () => {
               : 'Drag & drop your documents here, or click to select'}
           </p>
           <p className="text-gray-400 mt-2">
-            Supported formats: PDF, DOC, DOCX (Max 5 files)
+            Supported formats: PDF, DOC, DOCX (Max 2 files, 5MB each)
           </p>
         </div>
       </motion.div>
 
-      {uploadError && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400 flex items-center"
-        >
-          <AlertCircle className="w-5 h-5 mr-2" />
-          {uploadError}
-        </motion.div>
-      )}
-
+      {/* File List */}
       <AnimatePresence>
-        {files.length > 0 && (
+        {files.map((file) => (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="w-full max-w-2xl mt-8 space-y-4"
+            key={file.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="w-full max-w-2xl mt-4 p-4 bg-black/40 rounded-lg flex items-center justify-between"
           >
-            {files.map((file) => (
-              <motion.div
-                key={file.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="bg-black/40 border border-purple-900/30 rounded-lg p-4 flex items-center"
+            <div className="flex items-center space-x-4">
+              <FileText className="text-purple-400" />
+              <div>
+                <p className="text-gray-200">{file.name}</p>
+                <p className="text-sm text-gray-400">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              {file.uploadProgress !== undefined && file.uploadProgress < 100 && !file.error && (
+                <div className="w-24 bg-purple-900/30 rounded-full h-2">
+                  <div
+                    className="bg-purple-400 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${file.uploadProgress}%` }}
+                  />
+                </div>
+              )}
+              
+              {file.error ? (
+                <AlertCircle className="text-red-400" />
+              ) : file.uploadProgress === 100 ? (
+                <CheckCircle className="text-green-400" />
+              ) : null}
+              
+              <button
+                onClick={() => removeFile(file.id)}
+                className="text-gray-400 hover:text-red-400 transition-colors"
+                disabled={isUploading}
               >
-                <div className="flex-shrink-0">
-                  <FileText className="w-8 h-8 text-purple-400" />
-                </div>
-                <div className="ml-4 flex-grow">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-300 font-medium truncate">
-                      {file.name}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFile(file.id);
-                      }}
-                      className="ml-2 text-gray-400 hover:text-red-400 transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  {file.uploadProgress !== undefined && (
-                    <div className="mt-2">
-                      <div className="h-2 bg-purple-900/20 rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full bg-purple-400"
-                          initial={{ width: '0%' }}
-                          animate={{ width: `${file.uploadProgress}%` }}
-                          transition={{ duration: 0.5 }}
-                        />
-                      </div>
-                      <div className="mt-1 flex items-center justify-between text-sm">
-                        <span className="text-gray-400">
-                          {file.uploadProgress}% uploaded
-                        </span>
-                        {file.uploadProgress === 100 && (
-                          <span className="text-green-400 flex items-center">
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Complete
-                          </span>
-                        )}
-                        {file.error && (
-                          <button
-                            onClick={() => retryUpload(file.id)}
-                            className="text-purple-400 hover:text-purple-300 transition-colors"
-                          >
-                            Retry
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+                <X size={20} />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      {/* Error Message */}
+      <AnimatePresence>
+        {uploadError && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="w-full max-w-2xl mt-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg flex items-center space-x-2"
+          >
+            <AlertCircle className="text-red-400" />
+            <p className="text-red-400">{uploadError}</p>
           </motion.div>
         )}
       </AnimatePresence>
