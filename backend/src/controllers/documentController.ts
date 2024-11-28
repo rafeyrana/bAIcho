@@ -70,7 +70,7 @@ export class DocumentController {
 
       // Verify each file exists in S3
       for (const doc of completion.documents) {
-        const exists = await s3Service.verifyFileExists(doc.s3Key);
+        const exists = await s3Service.verifyFileUpload(doc.s3Key);
         if (!exists && doc.status === 'success') {
           doc.status = 'failed';
           doc.error = 'File not found in S3';

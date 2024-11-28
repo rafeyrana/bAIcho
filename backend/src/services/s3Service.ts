@@ -7,14 +7,23 @@ class S3Service {
   private bucketName: string;
 
   constructor() {
+    const region = process.env.AWS_REGION;
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+    const bucketName = process.env.S3_BUCKET_NAME;
+
+    if (!region || !accessKeyId || !secretAccessKey || !bucketName) {
+      throw new Error('Missing required AWS configuration');
+    }
+
     this.s3Client = new S3Client({
-      region: process.env.AWS_REGION,
+      region,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId,
+        secretAccessKey,
       },
     });
-    this.bucketName = process.env.S3_BUCKET_NAME!;
+    this.bucketName = bucketName;
   }
 
   async generatePresignedUrl(
@@ -23,18 +32,29 @@ class S3Service {
     fileType: string
   ): Promise<{ presignedUrl: string; s3Key: string }> {
     try {
+      if (!email || !filename || !fileType) {
+        throw new Error('Missing required parameters for presigned URL generation');
+      }
+
       // Generate a unique key for the file
       const timestamp = new Date().getTime();
-      const s3Key = `${email}/${timestamp}_${filename}`;
+      const sanitizedEmail = email.replace(/[^a-zA-Z0-9@._-]/g, '_');
+      const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const s3Key = `${sanitizedEmail}/${timestamp}_${sanitizedFilename}`;
 
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: s3Key,
         ContentType: fileType,
+        ACL: 'private',
+        Metadata: {
+          'x-amz-acl': 'private'
+        }
       });
 
+      // Generate presigned URL with longer expiration
       const presignedUrl = await getSignedUrl(this.s3Client, command, {
-        expiresIn: 300, // 5 minutes
+        expiresIn: 3600,
       });
 
       return {
@@ -43,20 +63,21 @@ class S3Service {
       };
     } catch (error) {
       console.error('Error generating presigned URL:', error);
-      throw new Error('Failed to generate upload URL');
+      throw new Error('Failed to generate presigned URL');
     }
   }
 
-  async verifyFileExists(s3Key: string): Promise<boolean> {
+  async verifyFileUpload(s3Key: string): Promise<boolean> {
     try {
-      await this.s3Client.send(
-        new HeadObjectCommand({
-          Bucket: this.bucketName,
-          Key: s3Key,
-        })
-      );
+      const command = new HeadObjectCommand({
+        Bucket: this.bucketName,
+        Key: s3Key,
+      });
+
+      await this.s3Client.send(command);
       return true;
     } catch (error) {
+      console.error('Error verifying file upload:', error);
       return false;
     }
   }

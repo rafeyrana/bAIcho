@@ -4,12 +4,12 @@ import { documentController } from '../controllers/documentController';
 const router: Router = express.Router();
 
 // Route to request presigned URLs for upload
-router.post('/request-upload', (req, res) => documentController.requestUpload(req, res));
+router.post('/request-upload', documentController.requestUpload);
 
 // Route to confirm upload completion
-router.post('/confirm-upload', (req, res) => documentController.confirmUpload(req, res));
+router.post('/confirm-upload', documentController.confirmUpload);
 
 // Route to get documents for a user
-router.get('/', (req, res) => documentController.getDocuments(req, res));
+router.get('/', documentController.getDocuments);
 
 export default router;
