@@ -14,6 +14,7 @@ interface UseFileUploadReturn {
   uploadProgress: UploadProgress;
   isUploading: boolean;
   error: string | null;
+  maxFilesError: string | null;
   addFiles: (newFiles: FileList | File[]) => void;
   removeFile: (fileId: string) => void;
   uploadFiles: (email: string) => Promise<void>;
@@ -31,9 +32,9 @@ export const useFileUpload = (options: UseFileUploadOptions = {}): UseFileUpload
   const [uploadProgress, setUploadProgress] = useState<UploadProgress>({});
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [maxFilesError, setMaxFilesError] = useState<string | null>(null);
 
   const validateFile = (file: File): string | null => {
-    console.log("this is the file type", file.type);
     if (!allowedTypes.includes(file.type)) {
       return `File type ${file.type} is not supported`;
     }
@@ -48,23 +49,21 @@ export const useFileUpload = (options: UseFileUploadOptions = {}): UseFileUpload
   const addFiles = useCallback(
     (newFiles: FileList | File[]) => {
       setError(null);
+      setMaxFilesError(null);
 
       const fileList = Array.from(newFiles);
       if (files.length + fileList.length > maxFiles) {
-        setError(`Maximum ${maxFiles} files allowed`);
+        setMaxFilesError(`You can only upload up to ${maxFiles} files at a time. Please remove some files before adding more.`);
         return;
       }
-      console.log("this is the file list", fileList);
 
       // Create new File objects with the same properties
       const validatedFiles: UploadFile[] = fileList.map(file => {
-        // Create a new File object with all the original properties
         const newFile = new File([file], file.name, {
           type: file.type,
           lastModified: file.lastModified
         });
 
-        // Add our custom properties
         return Object.assign(newFile, {
           id: uuidv4(),
           preview: undefined,
@@ -73,11 +72,8 @@ export const useFileUpload = (options: UseFileUploadOptions = {}): UseFileUpload
         }) as UploadFile;
       });
 
-      console.log("these are the validated files", validatedFiles);
-
       // Validate each file
       for (const file of validatedFiles) {
-        console.log(file);
         const error = validateFile(file);
         if (error) {
           setError(error);
@@ -97,6 +93,7 @@ export const useFileUpload = (options: UseFileUploadOptions = {}): UseFileUpload
       delete newProgress[fileId];
       return newProgress;
     });
+    setMaxFilesError(null);
   }, []);
 
   const uploadFiles = useCallback(async (email: string) => {
@@ -107,6 +104,7 @@ export const useFileUpload = (options: UseFileUploadOptions = {}): UseFileUpload
 
     setIsUploading(true);
     setError(null);
+    setMaxFilesError(null);
 
     try {
       await documentService.uploadDocuments(files, email, (progress) => {
@@ -130,6 +128,7 @@ export const useFileUpload = (options: UseFileUploadOptions = {}): UseFileUpload
     setFiles([]);
     setUploadProgress({});
     setError(null);
+    setMaxFilesError(null);
   }, []);
 
   return {
@@ -137,6 +136,7 @@ export const useFileUpload = (options: UseFileUploadOptions = {}): UseFileUpload
     uploadProgress,
     isUploading,
     error,
+    maxFilesError,
     addFiles,
     removeFile,
     uploadFiles,
