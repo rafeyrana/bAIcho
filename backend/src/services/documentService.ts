@@ -6,10 +6,19 @@ class DocumentService {
   private supabase;
 
   constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Supabase URL and service role key are required. Check your .env file.');
+    }
+
+    this.supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
   }
 
   async createPendingDocument(
@@ -32,11 +41,14 @@ class DocumentService {
         created_at: new Date().toISOString(),
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error creating document:', error);
+        throw error;
+      }
       return documentId;
     } catch (error) {
       console.error('Error creating pending document:', error);
-      throw new Error('Failed to create document record');
+      throw new Error('Failed to create pending document');
     }
   }
 
@@ -55,10 +67,38 @@ class DocumentService {
         })
         .eq('id', documentId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Supabase error updating document status:', updateError);
+        throw updateError;
+      }
     } catch (error) {
       console.error('Error updating document status:', error);
       throw new Error('Failed to update document status');
+    }
+  }
+
+  async processUploadCompletion(completion: UploadCompletionDTO): Promise<void> {
+    try {
+      const { documents, email } = completion;
+
+      for (const doc of documents) {
+        const { error } = await this.supabase
+          .from('documents')
+          .update({
+            upload_status: doc.status,
+            error: doc.error,
+            updated_at: new Date().toISOString(),
+          })
+          .match({ id: doc.documentId, user_email: email });
+
+        if (error) {
+          console.error('Supabase error processing upload completion:', error);
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error('Error processing upload completion:', error);
+      throw new Error('Failed to process upload completion');
     }
   }
 
@@ -70,26 +110,14 @@ class DocumentService {
         .eq('user_email', email)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Supabase error fetching documents:', error);
+        throw error;
+      }
+      return data || [];
     } catch (error) {
       console.error('Error fetching documents:', error);
       throw new Error('Failed to fetch documents');
-    }
-  }
-
-  async processUploadCompletion(completion: UploadCompletionDTO): Promise<void> {
-    for (const doc of completion.documents) {
-      try {
-        await this.updateDocumentStatus(
-          doc.documentId,
-          doc.status === 'success' ? 'completed' : doc.status,
-          doc.error
-        );
-      } catch (error) {
-        console.error(`Error processing document ${doc.documentId}:`, error);
-        // Continue processing other documents even if one fails
-      }
     }
   }
 }
