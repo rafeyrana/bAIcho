@@ -1,5 +1,6 @@
-import { S3Client, PutObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { logInfo, logError, logDebug, logWarn } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 
 class S3Service {
@@ -24,6 +25,11 @@ class S3Service {
       },
     });
     this.bucketName = bucketName;
+    
+    logInfo('S3Service initialized', { 
+      region: process.env.AWS_REGION,
+      bucket: this.bucketName 
+    });
   }
 
   async generatePresignedUrl(
@@ -42,6 +48,8 @@ class S3Service {
       const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
       const s3Key = `${sanitizedEmail}/${timestamp}_${sanitizedFilename}`;
 
+      logDebug('Generating presigned URL', { email, filename, fileType, s3Key });
+
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: s3Key,
@@ -57,28 +65,56 @@ class S3Service {
         expiresIn: 3600,
       });
 
+      logInfo('Generated presigned URL successfully', { email, filename, s3Key });
+
       return {
         presignedUrl,
         s3Key,
       };
     } catch (error) {
-      console.error('Error generating presigned URL:', error);
+      logError('Error generating presigned URL', error as Error, { email, filename, fileType });
       throw new Error('Failed to generate presigned URL');
     }
   }
 
   async verifyFileUpload(s3Key: string): Promise<boolean> {
     try {
+      logDebug('Verifying file upload', { s3Key });
+
       const command = new HeadObjectCommand({
         Bucket: this.bucketName,
         Key: s3Key,
       });
 
       await this.s3Client.send(command);
+      
+      logInfo('File upload verified successfully', { s3Key });
       return true;
     } catch (error) {
-      console.error('Error verifying file upload:', error);
-      return false;
+      if ((error as any).name === 'NotFound') {
+        logWarn('File not found during verification', { s3Key });
+        return false;
+      }
+      logError('Error verifying file upload', error as Error, { s3Key });
+      throw error;
+    }
+  }
+
+  async deleteFile(s3Key: string): Promise<void> {
+    try {
+      logDebug('Deleting file', { s3Key });
+
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: s3Key
+      });
+
+      await this.s3Client.send(command);
+      
+      logInfo('File deleted successfully', { s3Key });
+    } catch (error) {
+      logError('Error deleting file', error as Error, { s3Key });
+      throw error;
     }
   }
 }
